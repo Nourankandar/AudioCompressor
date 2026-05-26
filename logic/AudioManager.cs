@@ -220,5 +220,11 @@ namespace AudioCompressor.logic
                 MessageBox.Show("Error saving file: " + ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
+        public void UpdateCompressionStats(long originalSize, long compressedSize, double seconds)
+        {
+            this.OriginalSize = originalSize;
+            this.CompressedSize = compressedSize;
+            this.TimeTaken = seconds;
+        }
     }
 }

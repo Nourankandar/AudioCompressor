@@ -19,3 +19,4 @@ D:\myProject\multimedia Projects\AudioCompressor\bin\Debug\net9.0-windows\NAudio
 D:\myProject\multimedia Projects\AudioCompressor\bin\Debug\net9.0-windows\NAudio.WinMM.dll
 D:\myProject\multimedia Projects\AudioCompressor\obj\Debug\net9.0-windows\AudioCompressor.csproj.AssemblyReference.cache
 D:\myProject\multimedia Projects\AudioCompressor\obj\Debug\net9.0-windows\AudioCom.E819DA11.Up2Date
+D:\myProject\multimedia Projects\AudioCompressor\obj\Debug\net9.0-windows\AudioCompressor.sourcelink.json

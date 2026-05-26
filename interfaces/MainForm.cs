@@ -8,7 +8,7 @@ namespace AudioCompressor.interfaces
     public partial class MainForm : Form
     {
         private Button btnBrowse, btnPlay, btnCompress, btnDecompress, btnReset, btnReport, btnSave;
-        private Label lblFileSize, lblDuration, lblTitle, lblAlgoTitle, lblWaveformTitle, lblFileName;
+        private Label lblFileSize, lblDuration, lblTitle, lblWaveformTitle, lblFileName;
         private Label lblSampleRate, lblChannels, lblBitrate, lblEncoding;
         private ComboBox cbAlgorithm;
         private Panel pnlHeader, pnlProperties, pnlControls, pnlWaveform;
@@ -16,6 +16,10 @@ namespace AudioCompressor.interfaces
         // تعريف المدراء الجدد
         private AudioManager audioManager = new AudioManager();
         private ClickHelper clickHelper;
+        private NumericUpDown numSampleRate;
+        private NumericUpDown numQuantization;
+        private ProgressBar progressBar;
+        private Panel pnlCharts;
 
         public MainForm()
         {
@@ -37,7 +41,9 @@ namespace AudioCompressor.interfaces
             btnPlay.Click += clickHelper.BtnPlay_Click;
             btnReset.Click += clickHelper.BtnReset_Click;
             btnSave.Click += clickHelper.BtnSave_Click;
-            
+            btnReport.Click += BtnReport_Click;
+            btnCompress.Click += (s, e) => clickHelper.BtnCompress_Click(cbAlgorithm, numSampleRate, numQuantization, progressBar);
+            btnDecompress.Click += (s, e) => clickHelper.BtnDecompress_Click(progressBar);
             this.AllowDrop = true;
             pnlWaveform.AllowDrop = true;
             this.DragEnter += clickHelper.MainForm_DragEnter;
@@ -70,7 +76,6 @@ namespace AudioCompressor.interfaces
             this.Controls.Add(btnBrowse);
 
             btnPlay = CreateModernButton("", 215, 230, 55, 45, Color.FromArgb(22, 163, 74), Color.White);
-            
             // رسم زر البلاي يذهب لـ AudioManager
             btnPlay.Paint += (s, e) => audioManager.DrawPlayButton(btnPlay, e.Graphics);
             this.Controls.Add(btnPlay);
@@ -89,7 +94,6 @@ namespace AudioCompressor.interfaces
                 lblPropHeader, lblFileName, lblFileSize, lblDuration, 
                 lblSampleRate, lblChannels, lblBitrate, lblEncoding 
             });
-
             this.Controls.Add(pnlProperties);
 
             pnlControls = new Panel { Size = new Size(365, 300), Location = new Point(370, 260), BackColor = Color.FromArgb(39, 39, 42) };
@@ -97,16 +101,16 @@ namespace AudioCompressor.interfaces
             // 1. الإعدادات (الخوارزمية، معدل العينات، مستويات التكميم)
             Label lblSettings = new Label { Text = "Compression Settings", Font = new Font("Segoe UI", 10, FontStyle.Bold), ForeColor = Color.FromArgb(147, 197, 253), Location = new Point(15, 15), AutoSize = true };
             cbAlgorithm = new ComboBox { Location = new Point(15, 30), Width = 160 }; // اختيار الخوارزمية
-            cbAlgorithm.Items.AddRange(new string[] { "DPCM", "Delta Modulation", "Predictive Coding" });
+            cbAlgorithm.Items.AddRange(new string[] { "DPCM", "Delta Modulation", "Nonlinear Quantization" });
 
-            NumericUpDown numSampleRate = new NumericUpDown { Location = new Point(185, 30), Width = 70, Minimum = 8000, Maximum = 48000, Value = 44100 };
-            NumericUpDown numQuantization = new NumericUpDown { Location = new Point(265, 30), Width = 70, Minimum = 2, Maximum = 16, Value = 8 };
+            numSampleRate = new NumericUpDown { Location = new Point(185, 30), Width = 70, Minimum = 8000, Maximum = 48000, Value = 44100 };
+            numQuantization = new NumericUpDown { Location = new Point(265, 30), Width = 70, Minimum = 2, Maximum = 16, Value = 8 };
 
             // 2. شريط التقدم (الطلب رقم 7)
-            ProgressBar progressBar = new ProgressBar { Location = new Point(15, 70), Size = new Size(335, 20) };
+            progressBar = new ProgressBar { Location = new Point(15, 70), Size = new Size(335, 20) };
 
             // 3. منطقة الرسوم البيانية (الطلب رقم 8)
-            Panel pnlCharts = new Panel { Location = new Point(15, 100), Size = new Size(335, 100), BackColor = Color.FromArgb(24, 24, 27) };
+            pnlCharts = new Panel { Location = new Point(15, 100), Size = new Size(335, 100), BackColor = Color.FromArgb(24, 24, 27) };
             Label lblChartTitle = new Label { Text = "Real-time Performance", ForeColor = Color.White, Location = new Point(5, 5) };
             pnlCharts.Controls.Add(lblChartTitle);
 
@@ -133,11 +137,36 @@ namespace AudioCompressor.interfaces
         // داخل كلاس MainForm
         private void BtnReport_Click(object sender, EventArgs e)
         {
+            // 1. التأكد من اختيار الخوارزمية
+            if (cbAlgorithm.SelectedItem == null)
+            {
+                MessageBox.Show("Please select a compression algorithm first.", "Information Missing", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            // 2. التأكد من أن المستخدم قام بالضغط أولاً لكي لا تظهر الأرقام أصفاراً
+            if (audioManager.OriginalSize == 0)
+            {
+                MessageBox.Show("Please compress the audio file first to generate the report.", "No Compression Data", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return;
+            }
+
             string selectedAlgo = cbAlgorithm.SelectedItem.ToString();
+            string pureFileName = System.IO.Path.GetFileName(audioManager.SelectedFilePath);
             
+            // قراءة القيم من الـ WaveFormat الحالي للملف
+            int currentSampleRate = 44100; 
+            int currentBitrate = 128;
+            
+            // 3. تمرير البيانات الحقيقية الناتجة عن عملية الضغط الحالية للتقرير 🌟
             ReportForm report = new ReportForm(
-                "audio.mp3", 5000000, 2500000, 1.25, 
-                selectedAlgo, 44100, 128
+                pureFileName, 
+                audioManager.OriginalSize, 
+                audioManager.CompressedSize, 
+                audioManager.TimeTaken, 
+                selectedAlgo, 
+                currentSampleRate, 
+                currentBitrate
             );
             report.ShowDialog();
         }
