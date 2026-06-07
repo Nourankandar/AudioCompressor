@@ -1,0 +1,15 @@
+# Visual Studio temporary files and build results
+.vs/
+bin/
+obj/
+*.user
+*.suo
+*.dbmdl
+
+# NuGet Packages (like NAudio)
+packages/
+*.nupkg
+
+# Temporary files created by our compression engine
+temp_compressed.bin
+temp_decompressed.wav

@@ -44,3 +44,4 @@ C:\Users\NITRO\Desktop\AudioCompressor-Ahmed_branch\obj\Debug\net9.0-windows\ref
 C:\Users\NITRO\Desktop\AudioCompressor-Ahmed_branch\obj\Debug\net9.0-windows\AudioCompressor.interfaces.MainForm.resources
 C:\Users\NITRO\Desktop\AudioCompressor-Ahmed_branch\obj\Debug\net9.0-windows\AudioCompressor.interfaces.ReportForm.resources
 C:\Users\NITRO\Desktop\AudioCompressor-Ahmed_branch\obj\Debug\net9.0-windows\AudioCompressor.csproj.GenerateResource.cache
+C:\Users\NITRO\Desktop\AudioCompressor-Ahmed_branch\obj\Debug\net9.0-windows\AudioCompressor.sourcelink.json
