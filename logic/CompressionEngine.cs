@@ -2,91 +2,74 @@ using System;
 using System.IO;
 using System.Threading;
 using NAudio.Wave;
+using NAudio.Wave.SampleProviders;
 
 namespace AudioCompressor.logic
 {
     public class CompressionEngine
     {
-        //public void CompressAudio(string inputWavPath, string outputCustomBinPath, string algorithm, int quantizationBits, CancellationToken token)
-        //{
-        //    if (!File.Exists(inputWavPath))
-        //        throw new FileNotFoundException("Input audio file not found.");
-
-        //    // 1. Read pure audio samples using NAudio
-        //    using var reader = new AudioFileReader(inputWavPath);
-        //    float[] floatBuffer = new float[reader.Length / 4];
-        //    int samplesRead = reader.Read(floatBuffer, 0, floatBuffer.Length);
-
-        //    short[] pcmData = new short[samplesRead];
-        //    for (int i = 0; i < samplesRead; i++)
-        //    {
-        //        // Check for cancellation during read for massive files
-        //        if (i % 10000 == 0) token.ThrowIfCancellationRequested();
-        //        pcmData[i] = (short)(floatBuffer[i] * short.MaxValue);
-        //    }
-
-        //    // 2. Route to specific algorithm
-        //    byte[] compressedData;
-        //    switch (algorithm.ToUpper())
-        //    {
-        //        case "DPCM":
-        //            compressedData = ExecuteDPCM(pcmData, token);
-        //            break;
-        //        case "DELTA MODULATION":
-        //            compressedData = ExecuteDeltaModulation(pcmData, token);
-        //            break;
-        //        case "NONLINEAR QUANTIZATION":
-        //            compressedData = ExecuteNonlinearQuantization(pcmData, quantizationBits, token);
-        //            break;
-        //        default:
-        //            throw new ArgumentException("Unknown algorithm selected.");
-        //    }
-
-        //    try
-        //    {
-
-        //    token.ThrowIfCancellationRequested();
-
-        //    }catch (Exception ex)
-        //    {
-        //        // Handle cancellation gracefully (e.g., delete partial file, log, etc.)
-        //        if (File.Exists(outputCustomBinPath))
-        //            File.Delete(outputCustomBinPath);
-        //        //throw; // Re-throw to let the caller know it was cancelled
-        //    }
-
-        //    // 3. Save compressed data with custom metadata headers
-        //    using var fs = new FileStream(outputCustomBinPath, FileMode.Create);
-        //    using var bw = new BinaryWriter(fs);
-        //    bw.Write(reader.WaveFormat.SampleRate);
-        //    bw.Write(reader.WaveFormat.Channels);
-        //    bw.Write(compressedData.Length);
-        //    bw.Write(compressedData);
-        //}
-
-
-
-        public void CompressAudio(string inputWavPath, string outputCustomBinPath, string algorithm, int quantizationBits, CancellationToken token)
+        // =====================================================================
+        //  COMPRESS
+        //
+        //  sampleRate      : يؤثر فعلياً — يُعيد تشكيل (Resample) البيانات
+        //                    قبل الضغط. تقليل الـ Sample Rate = عينات أقل = ملف أصغر
+        //  quantizationBits: يؤثر فعلياً على A-Law (عدد مستويات التكميم)
+        //  stepSize        : يؤثر فعلياً على Delta Modulation (حجم الخطوة)
+        // =====================================================================
+        public void CompressAudio(
+            string inputWavPath,
+            string outputCustomBinPath,
+            string algorithm,
+            int targetSampleRate,
+            int quantizationBits,
+            int stepSize,
+            CancellationToken token)
         {
             if (!File.Exists(inputWavPath))
                 throw new FileNotFoundException("Input audio file not found.");
 
             try
             {
-                // 1. Read pure audio samples using NAudio
                 using var reader = new AudioFileReader(inputWavPath);
-                float[] floatBuffer = new float[reader.Length / 4];
-                int samplesRead = reader.Read(floatBuffer, 0, floatBuffer.Length);
 
+                int    originalSampleRate = reader.WaveFormat.SampleRate;
+                int    channels           = reader.WaveFormat.Channels;
+
+                // ── خطوة 1: Resample إذا طلب المستخدم Sample Rate مختلف ──
+                // هذا هو التأثير الحقيقي للـ Sample Rate:
+                //   - تقليل الـ SR (مثلاً 48000 → 22050) = عينات أقل = ملف مضغوط أصغر
+                //   - رفع الـ SR (مثلاً 48000 → 96000)   = عينات أكثر = ملف مضغوط أكبر
+                float[] floatBuffer;
+                int     samplesRead;
+
+                if (targetSampleRate != originalSampleRate)
+                {
+                    // استخدام WdlResamplingSampleProvider من NAudio للـ Resample
+                    var resampler = new WdlResamplingSampleProvider(reader, targetSampleRate);
+
+                    // تقدير حجم البفر بعد الـ Resample
+                    double ratio          = (double)targetSampleRate / originalSampleRate;
+                    int    estimatedCount = (int)(reader.Length / 4 * ratio) + channels * 2;
+
+                    floatBuffer = new float[estimatedCount];
+                    samplesRead = resampler.Read(floatBuffer, 0, estimatedCount);
+                }
+                else
+                {
+                    // لا يوجد Resample — قراءة مباشرة
+                    floatBuffer = new float[reader.Length / 4];
+                    samplesRead = reader.Read(floatBuffer, 0, floatBuffer.Length);
+                }
+
+                // ── خطوة 2: تحويل float [-1,1] → short [-32768, 32767] ──
                 short[] pcmData = new short[samplesRead];
                 for (int i = 0; i < samplesRead; i++)
                 {
-                    // Check for cancellation during read for massive files
                     if (i % 10000 == 0) token.ThrowIfCancellationRequested();
-                    pcmData[i] = (short)(floatBuffer[i] * short.MaxValue);
+                    pcmData[i] = (short)(Math.Clamp(floatBuffer[i], -1f, 1f) * short.MaxValue);
                 }
 
-                // 2. Route to specific algorithm
+                // ── خطوة 3: توجيه للخوارزمية المختارة ──
                 byte[] compressedData;
                 switch (algorithm.ToUpper())
                 {
@@ -94,7 +77,7 @@ namespace AudioCompressor.logic
                         compressedData = ExecuteDPCM(pcmData, token);
                         break;
                     case "DELTA MODULATION":
-                        compressedData = ExecuteDeltaModulation(pcmData, token);
+                        compressedData = ExecuteDeltaModulation(pcmData, stepSize, token);
                         break;
                     case "NONLINEAR QUANTIZATION":
                         compressedData = ExecuteNonlinearQuantization(pcmData, quantizationBits, token);
@@ -103,31 +86,36 @@ namespace AudioCompressor.logic
                         throw new ArgumentException("Unknown algorithm selected.");
                 }
 
-                // Final cancellation check before saving
                 token.ThrowIfCancellationRequested();
 
-                // 3. Save compressed data with custom metadata headers
+                // ── خطوة 4: حفظ الملف .bin مع الـ header ──
+                // نحفظ targetSampleRate (وليس originalSampleRate) لأن هذا ما استخدمناه فعلاً
                 using var fs = new FileStream(outputCustomBinPath, FileMode.Create);
                 using var bw = new BinaryWriter(fs);
-                bw.Write(reader.WaveFormat.SampleRate);
-                bw.Write(reader.WaveFormat.Channels);
-                bw.Write(compressedData.Length);
-                bw.Write(compressedData);
+
+                bw.Write(targetSampleRate);       // int: 4 bytes ← SR المستخدم فعلاً
+                bw.Write(channels);               // int: 4 bytes
+                bw.Write(quantizationBits);       // int: 4 bytes
+                bw.Write(stepSize);               // int: 4 bytes
+                bw.Write(compressedData.Length);  // int: 4 bytes
+                bw.Write(compressedData);         // البيانات المضغوطة
             }
             catch (OperationCanceledException)
             {
-                // Handle cancellation gracefully: clean up the partial file if it exists
                 if (File.Exists(outputCustomBinPath))
                     File.Delete(outputCustomBinPath);
-
-                // MUST re-throw! This allows the catch (OperationCanceledException) block 
-                // in ClickHelper.cs to run, which safely resets the progress bar and shows the warning.
                 throw;
             }
         }
 
-
-        public void DecompressAudio(string compressedBinPath, string outputWavPath, string algorithm, int quantizationBits)
+        // =====================================================================
+        //  DECOMPRESS
+        //  يقرأ جميع الإعدادات من الـ header — لا يحتاج أي input من الواجهة
+        // =====================================================================
+        public void DecompressAudio(
+            string compressedBinPath,
+            string outputWavPath,
+            string algorithm)
         {
             if (!File.Exists(compressedBinPath))
                 throw new FileNotFoundException("Compressed .bin file not found.");
@@ -135,11 +123,15 @@ namespace AudioCompressor.logic
             using var fs = new FileStream(compressedBinPath, FileMode.Open);
             using var br = new BinaryReader(fs);
 
-            int sampleRate = br.ReadInt32();
-            int channels = br.ReadInt32();
-            int dataLength = br.ReadInt32();
+            // قراءة الـ header
+            int sampleRate       = br.ReadInt32();  // الـ SR المستخدم عند الضغط
+            int channels         = br.ReadInt32();
+            int quantizationBits = br.ReadInt32();
+            int stepSize         = br.ReadInt32();
+            int dataLength       = br.ReadInt32();
             byte[] compressedData = br.ReadBytes(dataLength);
 
+            // فك الضغط بنفس الإعدادات المحفوظة
             short[] decompressedPcm;
             switch (algorithm.ToUpper())
             {
@@ -147,7 +139,7 @@ namespace AudioCompressor.logic
                     decompressedPcm = DecompressDPCM(compressedData);
                     break;
                 case "DELTA MODULATION":
-                    decompressedPcm = DecompressDeltaModulation(compressedData);
+                    decompressedPcm = DecompressDeltaModulation(compressedData, stepSize);
                     break;
                 case "NONLINEAR QUANTIZATION":
                     decompressedPcm = DecompressNonlinearQuantization(compressedData, quantizationBits);
@@ -156,6 +148,7 @@ namespace AudioCompressor.logic
                     throw new ArgumentException("Unknown algorithm selected.");
             }
 
+            // كتابة ملف WAV بنفس الـ SR المحفوظ
             var format = new WaveFormat(sampleRate, 16, channels);
             using var writer = new WaveFileWriter(outputWavPath, format);
 
@@ -164,19 +157,21 @@ namespace AudioCompressor.logic
             writer.Write(finalWavBytes, 0, finalWavBytes.Length);
         }
 
-        // ----------------------------------------------------
-        // Algorithm 1: DPCM 
-        // ----------------------------------------------------
+        // =====================================================================
+        //  الخوارزمية الأولى: DPCM
+        //  يخزن الفرق بين عينتين متتاليتين — 16-bit → 8-bit
+        //  نسبة الضغط الإضافية من Sample Rate:
+        //    مثلاً 48000→22050: عدد العينات ينقص بنسبة ~54% → الملف المضغوط أصغر بنفس النسبة
+        // =====================================================================
         private byte[] ExecuteDPCM(short[] data, CancellationToken token)
         {
             if (data.Length == 0) return Array.Empty<byte>();
-            byte[] encoded = new byte[data.Length];
 
+            byte[] encoded = new byte[data.Length];
             encoded[0] = (byte)((data[0] >> 8) + 128);
 
             for (int i = 1; i < data.Length; i++)
             {
-                // Halt instantly if the user clicked cancel
                 if (i % 5000 == 0) token.ThrowIfCancellationRequested();
 
                 int diff = (data[i] >> 8) - (data[i - 1] >> 8);
@@ -189,8 +184,8 @@ namespace AudioCompressor.logic
         private short[] DecompressDPCM(byte[] data)
         {
             if (data.Length == 0) return Array.Empty<short>();
-            short[] decoded = new short[data.Length];
 
+            short[] decoded = new short[data.Length];
             int currentVal = data[0] - 128;
             decoded[0] = (short)(currentVal << 8);
 
@@ -203,17 +198,18 @@ namespace AudioCompressor.logic
             return decoded;
         }
 
-        // ----------------------------------------------------
-        // Algorithm 2: Delta Modulation 
-        // ----------------------------------------------------
-        private byte[] ExecuteDeltaModulation(short[] data, CancellationToken token)
+        // =====================================================================
+        //  الخوارزمية الثانية: Delta Modulation
+        //  بت واحد لكل عينة — 8 عينات في byte
+        //  stepSize: حجم الخطوة (1000-2000 مثالي لـ 16-bit)
+        // =====================================================================
+        private byte[] ExecuteDeltaModulation(short[] data, int stepSize, CancellationToken token)
         {
             if (data.Length == 0) return Array.Empty<byte>();
 
             int byteCount = (int)Math.Ceiling(data.Length / 8.0);
             byte[] encoded = new byte[byteCount];
-
-            short stepSize = 1500;
+            short step = (short)Math.Clamp(stepSize, 1, short.MaxValue);
             short predictedValue = 0;
 
             for (int i = 0; i < data.Length; i++)
@@ -221,91 +217,97 @@ namespace AudioCompressor.logic
                 if (i % 5000 == 0) token.ThrowIfCancellationRequested();
 
                 int byteIndex = i / 8;
-                int bitIndex = i % 8;
+                int bitIndex  = i % 8;
 
                 if (data[i] >= predictedValue)
                 {
                     encoded[byteIndex] |= (byte)(1 << (7 - bitIndex));
-                    predictedValue = (short)Math.Min(short.MaxValue, predictedValue + stepSize);
+                    predictedValue = (short)Math.Min(short.MaxValue, predictedValue + step);
                 }
                 else
                 {
-                    predictedValue = (short)Math.Max(short.MinValue, predictedValue - stepSize);
+                    predictedValue = (short)Math.Max(short.MinValue, predictedValue - step);
                 }
             }
             return encoded;
         }
 
-        private short[] DecompressDeltaModulation(byte[] data)
+        private short[] DecompressDeltaModulation(byte[] data, int stepSize)
         {
             int sampleCount = data.Length * 8;
             short[] decoded = new short[sampleCount];
 
-            short stepSize = 1500;
+            short step = (short)Math.Clamp(stepSize, 1, short.MaxValue);
             short predictedValue = 0;
 
             for (int i = 0; i < sampleCount; i++)
             {
                 int byteIndex = i / 8;
-                int bitIndex = i % 8;
+                int bitIndex  = i % 8;
 
                 bool isOne = (data[byteIndex] & (1 << (7 - bitIndex))) != 0;
 
                 if (isOne)
-                {
-                    predictedValue = (short)Math.Min(short.MaxValue, predictedValue + stepSize);
-                }
+                    predictedValue = (short)Math.Min(short.MaxValue, predictedValue + step);
                 else
-                {
-                    predictedValue = (short)Math.Max(short.MinValue, predictedValue - stepSize);
-                }
+                    predictedValue = (short)Math.Max(short.MinValue, predictedValue - step);
+
                 decoded[i] = predictedValue;
             }
             return decoded;
         }
 
-        // ----------------------------------------------------
-        // Algorithm 3: Nonlinear Quantization (A-Law Mapping)
-        // ----------------------------------------------------
+        // =====================================================================
+        //  الخوارزمية الثالثة: Nonlinear Quantization (A-Law)
+        //  ضغط لوغاريتمي — A=87.6 (معيار ITU-T G.711)
+        //  quantizationBits: عدد مستويات التكميم (2^bits)
+        // =====================================================================
         private byte[] ExecuteNonlinearQuantization(short[] data, int bits, CancellationToken token)
         {
             byte[] encoded = new byte[data.Length];
-            double A = 87.6;
- 
+            double A      = 87.6;
+            int    levels = (int)Math.Pow(2, Math.Clamp(bits, 2, 16));
 
             for (int i = 0; i < data.Length; i++)
             {
                 if (i % 5000 == 0) token.ThrowIfCancellationRequested();
 
-                double x = data[i] / (double)short.MaxValue;
+                double x    = data[i] / (double)short.MaxValue;
                 double absX = Math.Abs(x);
-                double y = 0;
+                double y;
 
-                if (absX < (1.0 / A)) y = (A * absX) / (1.0 + Math.Log(A));
-                else y = (1.0 + Math.Log(A * absX)) / (1.0 + Math.Log(A));
+                if (absX < (1.0 / A))
+                    y = (A * absX) / (1.0 + Math.Log(A));
+                else
+                    y = (1.0 + Math.Log(A * absX)) / (1.0 + Math.Log(A));
 
                 y = Math.Sign(x) * y;
 
-                int quantized = (int)(((y + 1.0) / 2.0) * 255);
-                encoded[i] = (byte)Math.Clamp(quantized, 0, 255);
-            }
+                int quantized = (int)(((y + 1.0) / 2.0) * (levels - 1));
+                quantized = Math.Clamp(quantized, 0, levels - 1);
 
+                encoded[i] = (byte)((quantized * 255) / (levels - 1));
+            }
             return encoded;
         }
 
         private short[] DecompressNonlinearQuantization(byte[] data, int bits)
         {
             short[] decoded = new short[data.Length];
-            double A = 87.6;
+            double  A       = 87.6;
+            int     levels  = (int)Math.Pow(2, Math.Clamp(bits, 2, 16));
 
             for (int i = 0; i < data.Length; i++)
             {
-                double y = ((data[i] / 255.0) * 2.0) - 1.0;
-                double absY = Math.Abs(y);
-                double x = 0;
+                int    quantized = (data[i] * (levels - 1)) / 255;
+                double y         = ((quantized / (double)(levels - 1)) * 2.0) - 1.0;
+                double absY      = Math.Abs(y);
+                double x;
 
-                if (absY < (1.0 / (1.0 + Math.Log(A)))) x = absY * (1.0 + Math.Log(A)) / A;
-                else x = Math.Exp(absY * (1.0 + Math.Log(A)) - 1.0) / A;
+                if (absY < (1.0 / (1.0 + Math.Log(A))))
+                    x = absY * (1.0 + Math.Log(A)) / A;
+                else
+                    x = Math.Exp(absY * (1.0 + Math.Log(A)) - 1.0) / A;
 
                 x = Math.Sign(y) * x;
 
