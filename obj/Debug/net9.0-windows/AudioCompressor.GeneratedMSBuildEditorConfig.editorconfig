@@ -6,8 +6,6 @@ build_property.ApplicationHighDpiMode =
 build_property.ApplicationUseCompatibleTextRendering = 
 build_property.ApplicationVisualStyles = 
 build_property.TargetFramework = net9.0-windows
-build_property.TargetFrameworkIdentifier = .NETCoreApp
-build_property.TargetFrameworkVersion = v9.0
 build_property.TargetPlatformMinVersion = 7.0
 build_property.UsingMicrosoftNETSdkWeb = 
 build_property.ProjectTypeGuids = 
@@ -16,11 +14,7 @@ build_property.PlatformNeutralAssembly =
 build_property.EnforceExtendedAnalyzerRules = 
 build_property._SupportedPlatformList = Linux,macOS,Windows
 build_property.RootNamespace = AudioCompressor
-<<<<<<< HEAD
-build_property.ProjectDir = C:\Users\Lenovo\AudioCompressor\
-=======
-build_property.ProjectDir = C:\Users\AsToRa313\Desktop\AudioCompressor\
->>>>>>> origin/reda
+build_property.ProjectDir = D:\myProject\multimedia Projects\AudioCompressor\
 build_property.EnableComHosting = 
 build_property.EnableGeneratedComInterfaceComImportInterop = 
 build_property.CsWinRTUseWindowsUIXamlProjections = false
