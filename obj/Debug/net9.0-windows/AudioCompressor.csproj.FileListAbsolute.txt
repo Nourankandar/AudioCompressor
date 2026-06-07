@@ -20,3 +20,25 @@ D:\myProject\multimedia Projects\AudioCompressor\bin\Debug\net9.0-windows\NAudio
 D:\myProject\multimedia Projects\AudioCompressor\obj\Debug\net9.0-windows\AudioCompressor.csproj.AssemblyReference.cache
 D:\myProject\multimedia Projects\AudioCompressor\obj\Debug\net9.0-windows\AudioCom.E819DA11.Up2Date
 D:\myProject\multimedia Projects\AudioCompressor\obj\Debug\net9.0-windows\AudioCompressor.sourcelink.json
+C:\Users\Lenovo\AudioCompressor\bin\Debug\net9.0-windows\AudioCompressor.exe
+C:\Users\Lenovo\AudioCompressor\bin\Debug\net9.0-windows\AudioCompressor.deps.json
+C:\Users\Lenovo\AudioCompressor\bin\Debug\net9.0-windows\AudioCompressor.runtimeconfig.json
+C:\Users\Lenovo\AudioCompressor\bin\Debug\net9.0-windows\AudioCompressor.dll
+C:\Users\Lenovo\AudioCompressor\bin\Debug\net9.0-windows\AudioCompressor.pdb
+C:\Users\Lenovo\AudioCompressor\bin\Debug\net9.0-windows\NAudio.dll
+C:\Users\Lenovo\AudioCompressor\bin\Debug\net9.0-windows\NAudio.Asio.dll
+C:\Users\Lenovo\AudioCompressor\bin\Debug\net9.0-windows\NAudio.Core.dll
+C:\Users\Lenovo\AudioCompressor\bin\Debug\net9.0-windows\NAudio.Midi.dll
+C:\Users\Lenovo\AudioCompressor\bin\Debug\net9.0-windows\NAudio.Wasapi.dll
+C:\Users\Lenovo\AudioCompressor\bin\Debug\net9.0-windows\NAudio.WinForms.dll
+C:\Users\Lenovo\AudioCompressor\bin\Debug\net9.0-windows\NAudio.WinMM.dll
+C:\Users\Lenovo\AudioCompressor\obj\Debug\net9.0-windows\AudioCompressor.csproj.AssemblyReference.cache
+C:\Users\Lenovo\AudioCompressor\obj\Debug\net9.0-windows\AudioCompressor.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\Lenovo\AudioCompressor\obj\Debug\net9.0-windows\AudioCompressor.csproj.CoreCompileInputs.cache
+C:\Users\Lenovo\AudioCompressor\obj\Debug\net9.0-windows\AudioCompressor.sourcelink.json
+C:\Users\Lenovo\AudioCompressor\obj\Debug\net9.0-windows\AudioCom.E819DA11.Up2Date
+C:\Users\Lenovo\AudioCompressor\obj\Debug\net9.0-windows\AudioCompressor.dll
+C:\Users\Lenovo\AudioCompressor\obj\Debug\net9.0-windows\refint\AudioCompressor.dll
+C:\Users\Lenovo\AudioCompressor\obj\Debug\net9.0-windows\AudioCompressor.pdb
+C:\Users\Lenovo\AudioCompressor\obj\Debug\net9.0-windows\AudioCompressor.genruntimeconfig.cache
+C:\Users\Lenovo\AudioCompressor\obj\Debug\net9.0-windows\ref\AudioCompressor.dll
