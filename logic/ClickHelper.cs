@@ -1,4 +1,3 @@
-
 using System;
 using System.IO;
 using System.Threading;
@@ -16,8 +15,9 @@ namespace AudioCompressor.logic
         private string tempBinPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "temp_compressed.bin");
         private string tempWavPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "temp_decompressed.wav");
 
-        // الخوارزمية النشطة — نحفظها لاستخدامها عند فك الضغط
+        // الخوارزمية النشطة والإعدادات المحفوظة
         private string activeAlgorithm;
+        private int activeQuantizationBits;
 
         // متغير الحفظ الذكي: ما هي آخر عملية (compress / decompress / none)
         private string lastAction = "none";
@@ -30,15 +30,10 @@ namespace AudioCompressor.logic
             this.audioManager = audioManager;
         }
 
-        // ===================================================
-        //  أزرار التحكم الأساسية
-        // ===================================================
-
         public void BtnBrowse_Click(object sender, EventArgs e)
         {
             using (OpenFileDialog openFileDialog = new OpenFileDialog())
             {
-                // أضفنا دعم امتداد .bin للفلتر
                 openFileDialog.Filter = "Audio & Compressed Files (*.mp3;*.wav;*.wma;*.bin)|*.mp3;*.wav;*.wma;*.bin";
                 if (openFileDialog.ShowDialog() == DialogResult.OK)
                 {
@@ -77,10 +72,6 @@ namespace AudioCompressor.logic
             else e.Effect = DragDropEffects.None;
         }
 
-        // ===================================================
-        //  زر الإلغاء
-        // ===================================================
-
         public void BtnCancel_Click(object sender, EventArgs e)
         {
             if (cancellationTokenSource != null && !cancellationTokenSource.IsCancellationRequested)
@@ -88,63 +79,49 @@ namespace AudioCompressor.logic
         }
 
         // ===================================================
-        //  زر Compress
+        //  زر الـ Compress المطور لإصلاح نقص البارامترات
         // ===================================================
-        public async void BtnCompress_Click(
-            ComboBox cbAlgo,
-            NumericUpDown numSampleRate,
-            NumericUpDown numQuant,
-            NumericUpDown numStepSize,
-            ProgressBar pb,
-            Button btnCancel)
+        public async Task BtnCompress_Click(ComboBox cbAlgo, NumericUpDown numSampleRate, NumericUpDown numQuant, NumericUpDown numStep, ProgressBar pb, Button btnCancel)
         {
             if (!audioManager.IsFileLoaded)
             {
-                MessageBox.Show("Please load an audio file first!", "Warning",
-                    MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                return;
-            }
-
-            if (audioManager.SelectedFilePath.EndsWith(".bin", StringComparison.OrdinalIgnoreCase))
-            {
-                MessageBox.Show("This is already a compressed .bin file. You cannot compress it again.", "Warning",
-                    MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                MessageBox.Show("Please load an audio file first!", "Warning", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
 
             if (cbAlgo.SelectedItem == null)
             {
-                MessageBox.Show("Please select a compression algorithm.", "Warning",
-                    MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                MessageBox.Show("Please select a compression algorithm.", "Warning", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
 
-            activeAlgorithm      = cbAlgo.SelectedItem.ToString();
-            int sampleRate       = (int)numSampleRate.Value; 
-            int quantizationBits = (int)numQuant.Value;      
-            int stepSize         = (int)numStepSize.Value;    
+            activeAlgorithm = cbAlgo.SelectedItem.ToString();
+            activeQuantizationBits = (int)numQuant.Value;
+            int targetSR = (int)numSampleRate.Value;
+            int stepSize = (int)numStep.Value;
 
             if (File.Exists(tempWavPath)) File.Delete(tempWavPath);
 
             cancellationTokenSource = new CancellationTokenSource();
             var token = cancellationTokenSource.Token;
-            btnCancel.Visible = true;
 
             try
             {
                 pb.Value = 20;
                 var stopwatch = System.Diagnostics.Stopwatch.StartNew();
 
+                // استدعاء الدالة بـ 7 بارامترات متطابقة تماماً مع محرك الضغط لمنع الـ Build Errors
                 await Task.Run(() =>
                 {
                     compressionEngine.CompressAudio(
-                        audioManager.SelectedFilePath,
-                        tempBinPath,
-                        activeAlgorithm,
-                        sampleRate,          
-                        quantizationBits,
-                        stepSize,
-                        token);
+                        audioManager.SelectedFilePath, 
+                        tempBinPath, 
+                        activeAlgorithm, 
+                        targetSR, 
+                        activeQuantizationBits, 
+                        stepSize, 
+                        token
+                    );
                 }, token);
 
                 lastAction = "compress";
@@ -157,43 +134,36 @@ namespace AudioCompressor.logic
                 audioManager.UpdateCompressionStats(origSize, compSize, secondsTaken);
 
                 pb.Value = 100;
-                MessageBox.Show(
-                    $"Audio compressed successfully using {activeAlgorithm}!\n" +
-                    $"Original Size:   {origSize / 1024} KB\n" +
-                    $"Compressed Size: {compSize / 1024} KB\n" +
-                    $"Time: {secondsTaken:F4} seconds.",
-                    "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                MessageBox.Show($"Audio compressed successfully using {activeAlgorithm}!\n" +
+                                $"Original Size: {origSize / 1024} KB\n" +
+                                $"Compressed Size: {compSize / 1024} KB\n" +
+                                $"Time: {secondsTaken:F4} seconds.",
+                                "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
             }
             catch (OperationCanceledException)
             {
                 pb.Value = 0;
-                MessageBox.Show("Compression cancelled by user.", "Cancelled",
-                    MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                lastAction = "none";
+                MessageBox.Show("Compression process was cancelled by the user.", "Cancelled", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 if (File.Exists(tempBinPath)) File.Delete(tempBinPath);
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Compression error: " + ex.Message, "Error",
-                    MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show("Compression error: " + ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 pb.Value = 0;
             }
             finally
             {
                 cancellationTokenSource?.Dispose();
                 cancellationTokenSource = null;
-                btnCancel.Visible = false;
             }
         }
 
-        // ===================================================
-        //  زر Decompress
-        // ===================================================
         public void BtnDecompress_Click(ProgressBar pb, ComboBox cbAlgo)
         {
             string targetBinPath = tempBinPath;
             bool isExternalBin = false;
 
-            // إذا كان المستخدم قد حمل ملف bin. مباشرة
             if (audioManager.IsFileLoaded && audioManager.SelectedFilePath.EndsWith(".bin", StringComparison.OrdinalIgnoreCase))
             {
                 targetBinPath = audioManager.SelectedFilePath;
@@ -208,7 +178,6 @@ namespace AudioCompressor.logic
 
             string algoToUse = activeAlgorithm;
 
-            // إذا تم تحميل الملف يدوياً، يجب الاعتماد على الخوارزمية المحددة في الـ ComboBox
             if (isExternalBin)
             {
                 if (cbAlgo.SelectedItem == null)
@@ -238,7 +207,6 @@ namespace AudioCompressor.logic
                     "Audio decompressed successfully!\nSignals restored to a playable WAV format.",
                     "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
 
-                // التحميل التلقائي للملف الصوتي المفكوك كي يتمكن المستخدم من تشغيله فوراً
                 audioManager.LoadSelectedFile(tempWavPath);
             }
             catch (Exception ex)
@@ -249,9 +217,6 @@ namespace AudioCompressor.logic
             }
         }
 
-        // ===================================================
-        //  زر Save
-        // ===================================================
         public void BtnSave_Click(object sender, EventArgs e)
         {
             if (lastAction == "none")
@@ -292,8 +257,7 @@ namespace AudioCompressor.logic
                     }
                     catch (IOException)
                     {
-                        MessageBox.Show(
-                            "Error: The file is currently in use. Please close it and try again.",
+                        MessageBox.Show("Error: The file is currently in use. Please close it and try again.",
                             "File in Use", MessageBoxButtons.OK, MessageBoxIcon.Error);
                     }
                     catch (Exception ex)

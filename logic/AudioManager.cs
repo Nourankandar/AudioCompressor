@@ -56,6 +56,7 @@ namespace AudioCompressor.logic
         }
 
         // تابع تحميل ومعالجة الملف الصوتي
+        
         public void LoadSelectedFile(string filePath)
         {
             try
@@ -71,6 +72,7 @@ namespace AudioCompressor.logic
 
                 SelectedFilePath = fileInfo.FullName;
                 IsFileLoaded = true;
+                IsPlaying = false; // 🌟 إعادة تعيين حالة التشغيل
 
                 // إذا كان الملف bin (مضغوط)، نقرأ معلوماته الأساسية فقط دون تشغيله في NAudio
                 if (ext == ".bin")
@@ -92,6 +94,10 @@ namespace AudioCompressor.logic
                 }
 
                 // خلاف ذلك، نتعامل معه كملف صوتي طبيعي
+                // 🌟 إيقاف وتنظيف الملف القديم أولاً قبل تحميل الجديد
+                if (outputDevice != null) { outputDevice.Stop(); outputDevice.Dispose(); outputDevice = null; }
+                if (audioFile != null) { audioFile.Dispose(); audioFile = null; }
+                
                 audioFile = new AudioFileReader(SelectedFilePath);
                 outputDevice = new WaveOutEvent();
                 outputDevice.Init(audioFile);
@@ -118,6 +124,7 @@ namespace AudioCompressor.logic
                 MessageBox.Show(ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
+
 
         private void GenerateRealWaveform()
         {
@@ -178,6 +185,12 @@ namespace AudioCompressor.logic
             if (SelectedFilePath.EndsWith(".bin", StringComparison.OrdinalIgnoreCase))
             {
                 MessageBox.Show("Cannot play a compressed .bin file directly. Please decompress it first.", "Warning", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            if (outputDevice == null || audioFile == null)
+            {
+                MessageBox.Show("Error: Audio file not properly initialized. Please reload the file.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 return;
             }
 
@@ -339,5 +352,10 @@ namespace AudioCompressor.logic
             this.CompressedSize = compressedSize;
             this.TimeTaken = seconds;
         }
+        public bool IsAudioPlaying()
+        {
+            return IsPlaying;
+        }
     }
+    
 }
