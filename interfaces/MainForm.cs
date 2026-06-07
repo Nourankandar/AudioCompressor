@@ -1,8 +1,4 @@
 
-
-
-
-
 using System;
 using System.Drawing;
 using System.Windows.Forms;
@@ -23,10 +19,9 @@ namespace AudioCompressor.interfaces
 
         private ComboBox cbAlgorithm;
 
-        // المدخلات الثلاثة التي يتحكم فيها المستخدم وتؤثر فعلياً على الخوارزميات
-        private NumericUpDown numSampleRate;    // Sample Rate (للعرض في التقرير)
-        private NumericUpDown numQuantization;  // Quantization Bits (يؤثر في A-Law)
-        private NumericUpDown numStepSize;      // Step Size (يؤثر في Delta Modulation)
+        private NumericUpDown numSampleRate;    
+        private NumericUpDown numQuantization;  
+        private NumericUpDown numStepSize;      
 
         private ProgressBar progressBar;
         private Panel pnlHeader, pnlProperties, pnlControls, pnlWaveform, pnlCharts;
@@ -51,7 +46,6 @@ namespace AudioCompressor.interfaces
 
             SetupUI();
 
-            // ربط مدير الصوت بعناصر الواجهة
             audioManager.InitializeUIReferences(
                 lblFileName, lblFileSize, lblDuration, pnlWaveform,
                 btnPlay, lblSampleRate, lblChannels, lblBitrate, lblEncoding);
@@ -68,18 +62,17 @@ namespace AudioCompressor.interfaces
             btnReport.Click    += BtnReport_Click;
             btnCancel.Click    += clickHelper.BtnCancel_Click;
 
-            // Compress: يمرر الآن numStepSize أيضاً
             btnCompress.Click += (s, e) => clickHelper.BtnCompress_Click(
                 cbAlgorithm,
                 numSampleRate,
                 numQuantization,
-                numStepSize,      // ← الجديد
+                numStepSize,      
                 progressBar,
                 btnCancel);
 
-            btnDecompress.Click += (s, e) => clickHelper.BtnDecompress_Click(progressBar);
+            // تم تمرير cbAlgorithm حتى يعرف النظام الخوارزمية لملفات bin المرفوعة خارجياً
+            btnDecompress.Click += (s, e) => clickHelper.BtnDecompress_Click(progressBar, cbAlgorithm);
 
-            // دعم السحب والإفلات
             this.AllowDrop = true;
             pnlWaveform.AllowDrop = true;
             this.DragEnter      += clickHelper.MainForm_DragEnter;
@@ -87,14 +80,12 @@ namespace AudioCompressor.interfaces
             this.DragDrop       += clickHelper.MainForm_DragDrop;
             pnlWaveform.DragDrop += clickHelper.MainForm_DragDrop;
 
-            // تحسين رسم الـ Waveform
             typeof(Panel).InvokeMember("DoubleBuffered",
                 System.Reflection.BindingFlags.SetProperty |
                 System.Reflection.BindingFlags.Instance |
                 System.Reflection.BindingFlags.NonPublic,
                 null, pnlWaveform, new object[] { true });
 
-            // عرض تلميح عند تغيير الخوارزمية لتوضيح أي Input يُستخدم
             cbAlgorithm.SelectedIndexChanged += CbAlgorithm_SelectedIndexChanged;
         }
 
@@ -106,33 +97,32 @@ namespace AudioCompressor.interfaces
             if (cbAlgorithm.SelectedItem == null) return;
             string algo = cbAlgorithm.SelectedItem.ToString().ToUpper();
 
-            // توضيح أي حقل يؤثر فعلياً حسب الخوارزمية المختارة
             switch (algo)
             {
                 case "DPCM":
-                    numStepSize.Enabled    = false; // لا تأثير
-                    numQuantization.Enabled = false; // لا تأثير
+                    numStepSize.Enabled    = false; 
+                    numQuantization.Enabled = false; 
                     numSampleRate.Enabled  = true;
-                    numStepSize.BackColor    = Color.FromArgb(50, 50, 55);   // رمادي داكن = معطّل
+                    numStepSize.BackColor    = Color.FromArgb(50, 50, 55);   
                     numQuantization.BackColor = Color.FromArgb(50, 50, 55);
                     numSampleRate.BackColor  = Color.FromArgb(39, 39, 42);
                     break;
 
                 case "DELTA MODULATION":
-                    numStepSize.Enabled    = true;  // يؤثر فعلياً
-                    numQuantization.Enabled = false; // لا تأثير
+                    numStepSize.Enabled    = true;  
+                    numQuantization.Enabled = false; 
                     numSampleRate.Enabled  = true;
-                    numStepSize.BackColor    = Color.FromArgb(39, 39, 42);   // طبيعي = مفعَّل
+                    numStepSize.BackColor    = Color.FromArgb(39, 39, 42);   
                     numQuantization.BackColor = Color.FromArgb(50, 50, 55);
                     numSampleRate.BackColor  = Color.FromArgb(39, 39, 42);
                     break;
 
                 case "NONLINEAR QUANTIZATION":
-                    numStepSize.Enabled    = false; // لا تأثير
-                    numQuantization.Enabled = true;  // يؤثر فعلياً
+                    numStepSize.Enabled    = false; 
+                    numQuantization.Enabled = true;  
                     numSampleRate.Enabled  = true;
                     numStepSize.BackColor    = Color.FromArgb(50, 50, 55);
-                    numQuantization.BackColor = Color.FromArgb(39, 39, 42);   // طبيعي = مفعَّل
+                    numQuantization.BackColor = Color.FromArgb(39, 39, 42);   
                     numSampleRate.BackColor  = Color.FromArgb(39, 39, 42);
                     break;
             }
@@ -269,10 +259,7 @@ namespace AudioCompressor.interfaces
             });
             this.Controls.Add(pnlProperties);
 
-            // ===================================================
-            //  Compression Settings Panel
-            //  يحتوي على الثلاث inputs + labels توضيحية
-            // ===================================================
+            // --- Compression Settings Panel ---
             pnlControls = new Panel
             {
                 Size = new Size(430, 410),
@@ -280,7 +267,6 @@ namespace AudioCompressor.interfaces
                 BackColor = Color.FromArgb(39, 39, 42)
             };
 
-            // عنوان القسم
             Label lblSettings = new Label
             {
                 Text = "Compression Settings",
@@ -290,7 +276,6 @@ namespace AudioCompressor.interfaces
                 AutoSize = true
             };
 
-            // --- Algorithm ComboBox ---
             Label lblAlgoHint = new Label
             {
                 Text = "Algorithm:",
@@ -315,8 +300,6 @@ namespace AudioCompressor.interfaces
                 "Nonlinear Quantization"
             });
 
-            // --- Sample Rate ---
-            // (يُقرأ من الملف تلقائياً، لكن يُعرض في التقرير)
             Label lblSRHint = new Label
             {
                 Text = "Sample Rate (Hz):",
@@ -337,7 +320,6 @@ namespace AudioCompressor.interfaces
                 ForeColor = Color.White
             };
 
-            // --- Quantization Bits (يؤثر في A-Law) ---
             Label lblQuantHint = new Label
             {
                 Text = "Quantization Bits (A-Law only):",
@@ -357,7 +339,6 @@ namespace AudioCompressor.interfaces
                 ForeColor = Color.White
             };
 
-            // --- Step Size (يؤثر في Delta Modulation) ---
             Label lblStepHint = new Label
             {
                 Text = "Step Size (Delta only):",
@@ -378,14 +359,12 @@ namespace AudioCompressor.interfaces
                 ForeColor = Color.White
             };
 
-            // --- Progress Bar ---
             progressBar = new ProgressBar
             {
                 Location = new Point(15, 140),
                 Size = new Size(400, 20)
             };
 
-            // --- Real-time panel ---
             pnlCharts = new Panel
             {
                 Location = new Point(15, 170),
@@ -401,13 +380,11 @@ namespace AudioCompressor.interfaces
             };
             pnlCharts.Controls.Add(lblChartTitle);
 
-            // --- Compress / Decompress ---
             btnCompress = CreateModernButton("Compress", 15, 245, 190, 45,
                 Color.FromArgb(79, 70, 229), Color.White);
             btnDecompress = CreateModernButton("Decompress", 220, 245, 190, 45,
                 Color.FromArgb(217, 119, 6), Color.White);
 
-            // --- Cancel (مخفي افتراضياً) ---
             btnCancel = CreateModernButton("Cancel", 220, 300, 190, 45,
                 Color.FromArgb(220, 38, 38), Color.White);
             btnCancel.Visible = false;
@@ -425,7 +402,6 @@ namespace AudioCompressor.interfaces
             });
             this.Controls.Add(pnlControls);
 
-            // --- Reset / Report / Save ---
             btnReset = CreateModernButton("Reset", 820, 285, 110, 45,
                 Color.FromArgb(113, 113, 122), Color.White);
             btnReport = CreateModernButton("View Report", 940, 285, 120, 45,
@@ -439,9 +415,6 @@ namespace AudioCompressor.interfaces
             this.Controls.Add(btnSave);
         }
 
-        // ===================================================
-        //  Helper: إنشاء زر موحد التصميم
-        // ===================================================
         private Button CreateModernButton(string text, int left, int top,
             int width, int height, Color bgColor, Color fgColor)
         {
@@ -460,9 +433,6 @@ namespace AudioCompressor.interfaces
             return btn;
         }
 
-        // ===================================================
-        //  زر View Report
-        // ===================================================
         private void BtnReport_Click(object sender, EventArgs e)
         {
             if (cbAlgorithm.SelectedItem == null)
