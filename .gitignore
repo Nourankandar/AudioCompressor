@@ -1,3 +1,20 @@
-.vs
-bin
-obj
+# تجاهل مجلدات البناء
+bin/
+obj/
+.vs/
+# تجاهل ملفات النتيجة الخاصة بـ NuGet
+*.nuspec
+*.nuget.cache
+
+.dll
+.pdb
+.vspscc
+.sln.docstates
+*.user
+*.suo
+*.cache
+*.ilk
+.json
+*.log
+*.tlog
+.props
