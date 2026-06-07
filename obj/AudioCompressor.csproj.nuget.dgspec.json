@@ -1,26 +1,32 @@
 {
   "format": 1,
   "restore": {
-    "D:\\myProject\\multimedia Projects\\AudioCompressor\\AudioCompressor.csproj": {}
+    "C:\\Users\\AsToRa313\\Desktop\\AudioCompressor-Ahmed_branch\\AudioCompressor.csproj": {}
   },
   "projects": {
-    "D:\\myProject\\multimedia Projects\\AudioCompressor\\AudioCompressor.csproj": {
+    "C:\\Users\\AsToRa313\\Desktop\\AudioCompressor-Ahmed_branch\\AudioCompressor.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "D:\\myProject\\multimedia Projects\\AudioCompressor\\AudioCompressor.csproj",
+        "projectUniqueName": "C:\\Users\\AsToRa313\\Desktop\\AudioCompressor-Ahmed_branch\\AudioCompressor.csproj",
         "projectName": "AudioCompressor",
-        "projectPath": "D:\\myProject\\multimedia Projects\\AudioCompressor\\AudioCompressor.csproj",
-        "packagesPath": "C:\\Users\\dell\\.nuget\\packages\\",
-        "outputPath": "D:\\myProject\\multimedia Projects\\AudioCompressor\\obj\\",
+        "projectPath": "C:\\Users\\AsToRa313\\Desktop\\AudioCompressor-Ahmed_branch\\AudioCompressor.csproj",
+        "packagesPath": "C:\\Users\\AsToRa313\\.nuget\\packages\\",
+        "outputPath": "C:\\Users\\AsToRa313\\Desktop\\AudioCompressor-Ahmed_branch\\obj\\",
         "projectStyle": "PackageReference",
+        "fallbackFolders": [
+          "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
+        ],
         "configFilePaths": [
-          "C:\\Users\\dell\\AppData\\Roaming\\NuGet\\NuGet.Config"
+          "C:\\Users\\AsToRa313\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
+          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
         ],
         "originalTargetFrameworks": [
           "net9.0-windows"
         ],
         "sources": {
-          "D:\\app": {},
+          "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
+          "C:\\Program Files\\dotnet\\library-packs": {},
           "https://api.nuget.org/v3/index.json": {}
         },
         "frameworks": {
@@ -39,7 +45,7 @@
           "auditLevel": "low",
           "auditMode": "direct"
         },
-        "SdkAnalysisLevel": "9.0.300"
+        "SdkAnalysisLevel": "10.0.200"
       },
       "frameworks": {
         "net9.0-windows7.0": {
@@ -61,6 +67,24 @@
           ],
           "assetTargetFallback": true,
           "warn": true,
+          "downloadDependencies": [
+            {
+              "name": "Microsoft.AspNetCore.App.Ref",
+              "version": "[9.0.16, 9.0.16]"
+            },
+            {
+              "name": "Microsoft.NETCore.App.Host.win-x64",
+              "version": "[9.0.16, 9.0.16]"
+            },
+            {
+              "name": "Microsoft.NETCore.App.Ref",
+              "version": "[9.0.16, 9.0.16]"
+            },
+            {
+              "name": "Microsoft.WindowsDesktop.App.Ref",
+              "version": "[9.0.16, 9.0.16]"
+            }
+          ],
           "frameworkReferences": {
             "Microsoft.NETCore.App": {
               "privateAssets": "all"
@@ -69,7 +93,7 @@
               "privateAssets": "none"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.313/PortableRuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\10.0.204/PortableRuntimeIdentifierGraph.json"
         }
       }
     }
