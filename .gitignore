@@ -1,20 +1,15 @@
-# تجاهل مجلدات البناء
+# Visual Studio temporary files and build results
+.vs/
 bin/
 obj/
-.vs/
-# تجاهل ملفات النتيجة الخاصة بـ NuGet
-*.nuspec
-*.nuget.cache
-
-.dll
-.pdb
-.vspscc
-.sln.docstates
 *.user
 *.suo
-*.cache
-*.ilk
-.json
-*.log
-*.tlog
-.props
+*.dbmdl
+
+# NuGet Packages (like NAudio)
+packages/
+*.nupkg
+
+# Temporary files created by our compression engine
+temp_compressed.bin
+temp_decompressed.wav
