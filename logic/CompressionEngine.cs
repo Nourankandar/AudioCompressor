@@ -315,5 +315,25 @@ namespace AudioCompressor.logic
             }
             return decoded;
         }
+
+        private static float[] ReadAllFloatSamples(ISampleProvider provider, CancellationToken token)
+        {
+            var samples = new List<float>();
+            float[] buffer = new float[65536];
+            int read;
+
+            while ((read = provider.Read(buffer, 0, buffer.Length)) > 0)
+            {
+                for (int i = 0; i < read; i++)
+                {
+                    if (i % 10000 == 0) token.ThrowIfCancellationRequested();
+                    samples.Add(buffer[i]);
+                }
+            }
+
+            return samples.ToArray();
+        }
     }
-}
+        
+    }
+    

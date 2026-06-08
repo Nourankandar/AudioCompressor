@@ -247,11 +247,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "C:\\Users\\AsToRa313\\Desktop\\AudioCompressor-Ahmed_branch\\AudioCompressor.csproj",
+      "projectUniqueName": "C:\\Users\\AsToRa313\\Desktop\\AudioCompressor\\AudioCompressor.csproj",
       "projectName": "AudioCompressor",
-      "projectPath": "C:\\Users\\AsToRa313\\Desktop\\AudioCompressor-Ahmed_branch\\AudioCompressor.csproj",
+      "projectPath": "C:\\Users\\AsToRa313\\Desktop\\AudioCompressor\\AudioCompressor.csproj",
       "packagesPath": "C:\\Users\\AsToRa313\\.nuget\\packages\\",
-      "outputPath": "C:\\Users\\AsToRa313\\Desktop\\AudioCompressor-Ahmed_branch\\obj\\",
+      "outputPath": "C:\\Users\\AsToRa313\\Desktop\\AudioCompressor\\obj\\",
       "projectStyle": "PackageReference",
       "fallbackFolders": [
         "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
