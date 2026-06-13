@@ -22,7 +22,6 @@ namespace AudioCompressor.interfaces
             int quantizationBits,
             int stepSize)
         {
-            // ── إعدادات النافذة الأساسية ──
             this.Text = "Compression Analytics Report";
             this.Size = new Size(540, 600);
             this.StartPosition = FormStartPosition.CenterParent;
@@ -31,7 +30,6 @@ namespace AudioCompressor.interfaces
             this.MaximizeBox = false;
             this.MinimizeBox = false;
 
-            // 🌟 الحساب الرياضي الدقيق لنسبة التوفير بدون تصفير تلقائي
             double savings = 0.0;
             if (originalSize > 0)
             {
@@ -41,7 +39,6 @@ namespace AudioCompressor.interfaces
             double origKB = originalSize / 1024.0;
             double compKB = compressedSize / 1024.0;
 
-            // ── 1. الهيدر (Header) ──
             Panel pnlHeader = new Panel { Dock = DockStyle.Top, Height = 70, BackColor = Color.FromArgb(16, 16, 18) };
             pnlHeader.Paint += (s, e) =>
             {
@@ -54,7 +51,6 @@ namespace AudioCompressor.interfaces
             };
             this.Controls.Add(pnlHeader);
 
-            // ── 2. اللوحة المركزية للبيانات (Main Grid Container) ──
             Panel pnlGrid = new Panel { Location = new Point(20, 90), Size = new Size(485, 410), BackColor = colorCardBg };
             pnlGrid.Paint += (s, e) =>
             {
@@ -71,7 +67,6 @@ namespace AudioCompressor.interfaces
             };
             this.Controls.Add(pnlGrid);
 
-            // ── إعداد صفوف البيانات داخل الـ Grid ──
             int currentY = 20;
             int rowHeight = 35;
             int labelX = 20;
@@ -103,29 +98,21 @@ namespace AudioCompressor.interfaces
                 currentY += rowHeight;
             }
 
-            // قسم معلومات الملف
             AddReportRow("File Name:", fileName, Color.White);
 
-            // خط فاصل داخلي ناعم
             AddSeparatorLine(pnlGrid, ref currentY);
 
-            // قسم تحليل المساحة
             AddReportRow("Original Size:", $"{origKB:F2} KB", Color.White);
             AddReportRow("Compressed Size:", $"{compKB:F2} KB", Color.White);
 
-            // عرض النسبة المئوية بلون أخضر محترم ومميز
             AddReportRow("Space Saved:", $"{savings:F2} %", Color.FromArgb(34, 197, 94), true);
 
-            // خط فاصل داخلي ناعم
             AddSeparatorLine(pnlGrid, ref currentY);
 
-            // قسم الأداء
             AddReportRow("Execution Time:", $"{timeTaken:F4} Seconds", Color.FromArgb(56, 189, 248));
 
-            // خط فاصل داخلي ناعم
             AddSeparatorLine(pnlGrid, ref currentY);
 
-            // قسم الإعدادات والخوارزمية
             AddReportRow("Algorithm:", algo.ToUpper(), Color.White, true);
             AddReportRow("Sample Rate:", $"{sampleRate} Hz", Color.White);
 
@@ -143,7 +130,6 @@ namespace AudioCompressor.interfaces
                     break;
             }
 
-            // ── 3. زر الإغلاق السفلي النظيف ──
             Button btnClose = new Button
             {
                 Text = "Close Report",
@@ -185,6 +171,5 @@ namespace AudioCompressor.interfaces
             return path;
         }
 
-        private void InitializeComponent() { }
     }
 }

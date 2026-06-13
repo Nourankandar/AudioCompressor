@@ -65,7 +65,7 @@ namespace AudioCompressor.interfaces
         private int[] chartValues = new int[50];
         private Random random = new Random();
 
-        private Label lblAlgoTitle, lblSRTitle, lblQuantTitle, lblStepTitle;
+        private Label lblAlgoTitle, lblSRTitle, lblQuantTitle;
 
         private Color colorPrimaryGradientStart = Color.FromArgb(99, 102, 241); // Indigo
         private Color colorPrimaryGradientEnd = Color.FromArgb(168, 85, 247);   // Purple
@@ -180,7 +180,6 @@ namespace AudioCompressor.interfaces
 
         private void SetupUI()
         {
-            // ── 1. Top Modern Header ──
             pnlHeader = new Panel { Size = new Size(1100, 60), Location = new Point(0, 0), BackColor = Color.FromArgb(22, 22, 26) };
             pnlHeader.Paint += (s, e) =>
             {
@@ -194,26 +193,22 @@ namespace AudioCompressor.interfaces
             };
             this.Controls.Add(pnlHeader);
 
-            // ── 2. Left Sidebar Control Panel (كسر صف العسكر: تجميع أزرار التحكم بداخل لوحة جانبية فخمة) ──
             Panel pnlSidebar = new Panel { Size = new Size(240, 340), Location = new Point(25, 80), BackColor = Color.FromArgb(24, 24, 28) };
             ApplyPremiumStyle(pnlSidebar, 14, Color.FromArgb(40, 40, 45));
 
-            Label lblSidebarTitle = new Label { Text = "🕹️  STUDIO NAVIGATION", Font = new Font("Segoe UI", 8.5f, FontStyle.Bold), ForeColor = Color.FromArgb(120, 120, 130), Location = new Point(20, 18), AutoSize = true };
+            Label lblSidebarTitle = new Label { Text = "  STUDIO NAVIGATION", Font = new Font("Segoe UI", 8.5f, FontStyle.Bold), ForeColor = Color.FromArgb(120, 120, 130), Location = new Point(20, 18), AutoSize = true };
             pnlSidebar.Controls.Add(lblSidebarTitle);
 
-            // الأزرار الجانبية مرتبة عمودياً ومتباعدة بأناقة داخل الـ Sidebar
-            btnBrowse = CreateNeonButton("📂  Browse File", 20, 50, 200, 42, colorPrimaryGradientStart, colorPrimaryGradientEnd);
+            btnBrowse = CreateNeonButton("  Browse File", 20, 50, 200, 42, colorPrimaryGradientStart, colorPrimaryGradientEnd);
 
-            // زر التشغيل صاير عريض وفخم وجنبو النص مو محشور بـ 40 بكسل
-            btnPlay = CreateNeonButton("▶️  Play / Pause Audio", 20, 105, 200, 42, Color.FromArgb(16, 185, 129), Color.FromArgb(5, 150, 105));
+            btnPlay = CreateNeonButton("Play / Pause Audio", 20, 105, 200, 42, Color.FromArgb(16, 185, 129), Color.FromArgb(5, 150, 105));
 
-            btnReset = CreateNeonButton("🔄  Reset Studio", 20, 210, 200, 40, Color.FromArgb(67, 76, 94), Color.FromArgb(59, 66, 82));
-            btnReport = CreateNeonButton("📋  Analytics Report", 20, 265, 200, 40, Color.FromArgb(14, 165, 233), Color.FromArgb(3, 105, 161));
+            btnReset = CreateNeonButton(" Reset Studio", 20, 210, 200, 40, Color.FromArgb(67, 76, 94), Color.FromArgb(59, 66, 82));
+            btnReport = CreateNeonButton("  Analytics Report", 20, 265, 200, 40, Color.FromArgb(14, 165, 233), Color.FromArgb(3, 105, 161));
 
             pnlSidebar.Controls.AddRange(new Control[] { btnBrowse, btnPlay, btnReset, btnReport });
             this.Controls.Add(pnlSidebar);
 
-            // ── 3. Top Waveform Visualizer (متموضع بجانب السايدبار بالصف العلوي) ──
             pnlWaveform = new Panel { Size = new Size(775, 140), Location = new Point(285, 80), BackColor = colorDarkBg };
             ApplyPremiumStyle(pnlWaveform, 12, Color.FromArgb(40, 40, 45));
             pnlWaveform.Paint += (s, e) => audioManager.DrawWaveform(e.Graphics);
@@ -222,7 +217,6 @@ namespace AudioCompressor.interfaces
             pnlWaveform.Controls.Add(lblWaveformTitle);
             this.Controls.Add(pnlWaveform);
 
-            // ── 4. Middle Section: File Properties (تموضع أفقي متناسق بالأسفل) ──
             pnlProperties = new Panel { Size = new Size(375, 185), Location = new Point(285, 235), BackColor = Color.FromArgb(24, 24, 28) };
             ApplyPremiumStyle(pnlProperties, 12, Color.FromArgb(38, 38, 42));
 
@@ -243,7 +237,6 @@ namespace AudioCompressor.interfaces
             });
             this.Controls.Add(pnlProperties);
 
-            // ── 5. Center Section: Compression Engine (دمج الإعدادات مع أزرار المعالجة الأساسية بشكل كتلة واحدة ضخمة) ──
             pnlControls = new Panel { Size = new Size(380, 185), Location = new Point(680, 235), BackColor = Color.FromArgb(24, 24, 28) };
             ApplyPremiumStyle(pnlControls, 12, Color.FromArgb(38, 38, 42));
 
@@ -287,24 +280,22 @@ namespace AudioCompressor.interfaces
                 }
             };
 
-            // ── 6. Bottom Action Block (الأزرار الأساسية الضخمة متموضعة بذكاء على سطر منفصل بحجوم متفاوتة وفخمة) ──
             int actionY = 435;
-            btnCompress = CreateNeonButton("⚡  COMPRESS AUDIO ENGINE", 25, actionY, 320, 44, colorPrimaryGradientStart, colorPrimaryGradientEnd);
+            btnCompress = CreateNeonButton("  COMPRESS AUDIO ENGINE", 25, actionY, 320, 44, colorPrimaryGradientStart, colorPrimaryGradientEnd);
             btnCompress.Font = new Font("Segoe UI", 10, FontStyle.Bold);
 
-            btnCancel = CreateNeonButton("🛑  CANCEL COMPRESSION", 25, actionY, 320, 44, Color.FromArgb(239, 68, 68), Color.FromArgb(185, 28, 28));
+            btnCancel = CreateNeonButton("  CANCEL COMPRESSION", 25, actionY, 320, 44, Color.FromArgb(239, 68, 68), Color.FromArgb(185, 28, 28));
             btnCancel.Font = new Font("Segoe UI", 10, FontStyle.Bold);
             btnCancel.Visible = false;
 
-            btnDecompress = CreateNeonButton("🔓  Extract / Decompress", 365, actionY, 240, 44, Color.FromArgb(245, 158, 11), Color.FromArgb(217, 119, 6));
+            btnDecompress = CreateNeonButton("  Extract / Decompress", 365, actionY, 240, 44, Color.FromArgb(245, 158, 11), Color.FromArgb(217, 119, 6));
 
-            btnSave = CreateNeonButton("💾   SAVE COMPRESSED ARCHIVE", 625, actionY, 435, 44, Color.FromArgb(16, 185, 129), Color.FromArgb(4, 120, 87));
+            btnSave = CreateNeonButton("   SAVE COMPRESSED ARCHIVE", 625, actionY, 435, 44, Color.FromArgb(16, 185, 129), Color.FromArgb(4, 120, 87));
             btnSave.Font = new Font("Segoe UI", 10, FontStyle.Bold);
 
             this.Controls.AddRange(new Control[] { btnCompress, btnDecompress, btnCancel, btnSave });
             btnCompress.BringToFront(); btnDecompress.BringToFront();
 
-            // ── 7. Core Performance Monitor Panel (لوحة شاشة العرض الرقمية السفلية بالكامل) ──
             progressBar = new NeonProgressBar { Location = new Point(25, 498), Size = new Size(1035, 10), Minimum = 0, Maximum = 100, Value = 0 };
             this.Controls.Add(progressBar);
 
@@ -345,7 +336,6 @@ namespace AudioCompressor.interfaces
             pnlCharts.Controls.Add(lblChartTitle);
             this.Controls.Add(pnlCharts);
 
-            // ── 8. Performance Clock ──
             chartTimer = new System.Windows.Forms.Timer { Interval = 100 };
             chartTimer.Tick += (s, e) =>
             {

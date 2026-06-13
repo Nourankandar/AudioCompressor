@@ -10,7 +10,6 @@ namespace AudioCompressor.logic
 {
     public class AudioManager
     {
-        // عناصر الواجهة التي سيقوم بتحديثها أو الرسم عليها
         private Label lblFileName;
         private Label lblFileSize;
         private Label lblDuration;
@@ -21,11 +20,7 @@ namespace AudioCompressor.logic
         private Label lblBitrate;
         private Label lblEncoding;
         private System.Windows.Forms.Timer audioTimer;
-
-        // 🌟 المصفوفة التي ستحفظ قمم الصوت الحقيقية للرسم
         private float[] audioPeaks; 
-
-        // الحالات (States) الخاصة بالصوت
         public string SelectedFilePath { get; private set; } = string.Empty;
         public bool IsFileLoaded { get; private set; } = false;
         public bool IsPlaying { get; private set; } = false;
@@ -36,7 +31,6 @@ namespace AudioCompressor.logic
         public long CompressedSize { get; private set; }
         public double TimeTaken { get; private set; }
 
-        // تابع لربط عناصر الواجهة بمدير الصوت (يتم استدعاؤه من الـ MainForm)
         public void InitializeUIReferences(Label name, Label size, Label duration, Panel waveform, Button playBtn, 
                                   Label sampleRate, Label channels, Label bitrate, Label encoding)
         {
@@ -50,12 +44,10 @@ namespace AudioCompressor.logic
             this.lblBitrate = bitrate;
             this.lblEncoding = encoding;
 
-            // إعداد التايمر الخاص بالتحريك داخل مدير الصوت
             this.audioTimer = new System.Windows.Forms.Timer { Interval = 70 };
             this.audioTimer.Tick += AudioTimer_Tick;
         }
 
-        // تابع تحميل ومعالجة الملف الصوتي
         
         public void LoadSelectedFile(string filePath)
         {
@@ -72,9 +64,8 @@ namespace AudioCompressor.logic
 
                 SelectedFilePath = fileInfo.FullName;
                 IsFileLoaded = true;
-                IsPlaying = false; // 🌟 إعادة تعيين حالة التشغيل
+                IsPlaying = false; 
 
-                // إذا كان الملف bin (مضغوط)، نقرأ معلوماته الأساسية فقط دون تشغيله في NAudio
                 if (ext == ".bin")
                 {
                     if (outputDevice != null) { outputDevice.Stop(); outputDevice.Dispose(); outputDevice = null; }
@@ -93,8 +84,6 @@ namespace AudioCompressor.logic
                     return;
                 }
 
-                // خلاف ذلك، نتعامل معه كملف صوتي طبيعي
-                // 🌟 إيقاف وتنظيف الملف القديم أولاً قبل تحميل الجديد
                 if (outputDevice != null) { outputDevice.Stop(); outputDevice.Dispose(); outputDevice = null; }
                 if (audioFile != null) { audioFile.Dispose(); audioFile = null; }
                 
@@ -102,10 +91,8 @@ namespace AudioCompressor.logic
                 outputDevice = new WaveOutEvent();
                 outputDevice.Init(audioFile);
 
-                // 🌟 استدعاء دالة تحليل الصوت الحقيقي هنا
                 GenerateRealWaveform();
 
-                // تحديث معلومات الصوت على الواجهة
                 double sizeMB = GetFileSizeInMB(fileInfo);
                 lblFileName.Text = $"File Name: {fileInfo.Name}";
                 lblFileSize.Text = $"File Size: {sizeMB:F2} MB";
@@ -137,14 +124,12 @@ namespace AudioCompressor.logic
 
             audioPeaks = new float[totalBars];
 
-            // نفتح قارئ مؤقت فقط لغرض الرسم وتدميره مباشرة
             using (var tempReader = new AudioFileReader(SelectedFilePath))
             {
                 int channels = tempReader.WaveFormat.Channels; 
                 long totalSamples = tempReader.Length / 4; 
                 int samplesPerBar = (int)(totalSamples / totalBars);
                 
-                // الحل السحري: إجبار حجم القراءة ليكون من مضاعفات عدد القنوات لمنع أخطاء NAudio
                 samplesPerBar = samplesPerBar - (samplesPerBar % channels);
                 if (samplesPerBar <= 0) samplesPerBar = channels; 
 
@@ -167,13 +152,11 @@ namespace AudioCompressor.logic
             } 
         }
 
-        // حساب الحجم
         public double GetFileSizeInMB(FileInfo fileInfo)
         {
             return (double)fileInfo.Length / (1024 * 1024);
         }
 
-        // تشغيل وإيقاف الصوت (Toggle)
         public void TogglePlay()
         {
             if (!IsFileLoaded || string.IsNullOrEmpty(SelectedFilePath))
@@ -209,7 +192,6 @@ namespace AudioCompressor.logic
             }
         }
 
-        // تصفير الصوت (Reset)
         public void ResetAudio()
         {   
             if (outputDevice != null) { outputDevice.Stop(); outputDevice.Dispose(); outputDevice = null; }
@@ -219,7 +201,7 @@ namespace AudioCompressor.logic
             IsFileLoaded = false;
             SelectedFilePath = string.Empty;
             animationOffset = 0;
-            audioPeaks = null; // 🌟 تفريغ مصفوفة القمم لمنع تداخل الرسومات القديمة
+            audioPeaks = null; 
             audioTimer.Stop();
 
             btnPlay.Invalidate();
@@ -235,27 +217,23 @@ namespace AudioCompressor.logic
             
         }
 
-        // منطق حركة الأمواج
         private void AudioTimer_Tick(object sender, EventArgs e)
         {
             animationOffset += 4;
-            pnlWaveform.Invalidate(); // نطلب تحديث مساحة الرسم ليتحرك خط التشغيل
+            pnlWaveform.Invalidate(); 
         }
 
-        // تابع رسم الأمواج الصوتيّة (النسخة الاحترافية الثابتة مع خط التشغيل)
         public void DrawWaveform(Graphics g)
         {
             g.SmoothingMode = SmoothingMode.AntiAlias;
             int midY = pnlWaveform.Height / 2;
             int width = pnlWaveform.Width;
 
-            // 1. رسم خط المنتصف (الصفر)
             using (Pen basePen = new Pen(Color.FromArgb(45, 45, 50), 1))
             {
                 g.DrawLine(basePen, 0, midY, width, midY);
             }
 
-            // 2. التحقق من وجود بيانات (ورسائل للمستخدم)
             if (!IsFileLoaded || string.IsNullOrEmpty(SelectedFilePath))
             {
                 TextRenderer.DrawText(g, "No audio file loaded. Please browse to visualize.", new Font("Segoe UI", 10), new Point(width / 2 - 140, midY - 10), Color.FromArgb(63, 63, 70));
@@ -274,18 +252,16 @@ namespace AudioCompressor.logic
             int barSpacing = 3;
             int barIndex = 0;
 
-            // 3. رسم الموجة الحقيقية الثابتة
             using (LinearGradientBrush brush = new LinearGradientBrush(new Point(0, 0), new Point(0, pnlWaveform.Height), Color.FromArgb(34, 197, 94), Color.FromArgb(59, 130, 246)))
             {
                 for (int x = 15; x < width - 15; x += (barWidth + barSpacing))
                 {
                     if (barIndex >= audioPeaks.Length) break;
 
-                    // استخراج القمة الحقيقية للصوت
                     float peak = audioPeaks[barIndex];
                     int baseHeight = (int)(peak * (pnlWaveform.Height * 0.9)); 
                     
-                    if (baseHeight < 2) baseHeight = 2; // الحد الأدنى للرسم
+                    if (baseHeight < 2) baseHeight = 2; 
 
                     int top = midY - (baseHeight / 2); 
                     g.FillRectangle(brush, x, top, barWidth, baseHeight); 
@@ -294,13 +270,10 @@ namespace AudioCompressor.logic
                 }
             }
 
-            // 4. رسم "خط التشغيل" المتحرك الأحمر إذا كان الصوت يعمل
             if (IsPlaying && audioFile != null)
             {
-                // حساب نسبة تقدم الصوت (من 0.0 إلى 1.0)
                 float progress = (float)audioFile.Position / audioFile.Length;
                 
-                // تحويل النسبة إلى موقع عرضي على الشاشة
                 int playheadX = 15 + (int)(progress * (width - 30)); 
 
                 using (Pen playheadPen = new Pen(Color.FromArgb(239, 68, 68), 2))
@@ -310,7 +283,6 @@ namespace AudioCompressor.logic
             }
         }
 
-        // تابع رسم أيقونة زر التشغيل
         public void DrawPlayButton(Button btn, Graphics g)
         {
             g.SmoothingMode = SmoothingMode.AntiAlias;

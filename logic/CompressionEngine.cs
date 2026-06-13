@@ -8,14 +8,7 @@ namespace AudioCompressor.logic
 {
     public class CompressionEngine
     {
-        // =====================================================================
-        //  COMPRESS
-        //
-        //  sampleRate      : يؤثر فعلياً — يُعيد تشكيل (Resample) البيانات
-        //                    قبل الضغط. تقليل الـ Sample Rate = عينات أقل = ملف أصغر
-        //  quantizationBits: يؤثر فعلياً على A-Law (عدد مستويات التكميم)
-        //  stepSize        : يؤثر فعلياً على Delta Modulation (حجم الخطوة)
-        // =====================================================================
+
         public void CompressAudio(
             string inputWavPath,
             string outputCustomBinPath,
@@ -34,20 +27,13 @@ namespace AudioCompressor.logic
 
                 int    originalSampleRate = reader.WaveFormat.SampleRate;
                 int    channels           = reader.WaveFormat.Channels;
-
-                // ── خطوة 1: Resample إذا طلب المستخدم Sample Rate مختلف ──
-                // هذا هو التأثير الحقيقي للـ Sample Rate:
-                //   - تقليل الـ SR (مثلاً 48000 → 22050) = عينات أقل = ملف مضغوط أصغر
-                //   - رفع الـ SR (مثلاً 48000 → 96000)   = عينات أكثر = ملف مضغوط أكبر
                 float[] floatBuffer;
                 int     samplesRead;
 
                 if (targetSampleRate != originalSampleRate)
                 {
-                    // استخدام WdlResamplingSampleProvider من NAudio للـ Resample
                     var resampler = new WdlResamplingSampleProvider(reader, targetSampleRate);
 
-                    // تقدير حجم البفر بعد الـ Resample
                     double ratio          = (double)targetSampleRate / originalSampleRate;
                     int    estimatedCount = (int)(reader.Length / 4 * ratio) + channels * 2;
 
@@ -56,12 +42,10 @@ namespace AudioCompressor.logic
                 }
                 else
                 {
-                    // لا يوجد Resample — قراءة مباشرة
                     floatBuffer = new float[reader.Length / 4];
                     samplesRead = reader.Read(floatBuffer, 0, floatBuffer.Length);
                 }
 
-                // ── خطوة 2: تحويل float [-1,1] → short [-32768, 32767] ──
                 short[] pcmData = new short[samplesRead];
                 for (int i = 0; i < samplesRead; i++)
                 {
@@ -69,7 +53,6 @@ namespace AudioCompressor.logic
                     pcmData[i] = (short)(Math.Clamp(floatBuffer[i], -1f, 1f) * short.MaxValue);
                 }
 
-                // ── خطوة 3: توجيه للخوارزمية المختارة ──
                 byte[] compressedData;
                 switch (algorithm.ToUpper())
                 {
@@ -88,17 +71,15 @@ namespace AudioCompressor.logic
 
                 token.ThrowIfCancellationRequested();
 
-                // ── خطوة 4: حفظ الملف .bin مع الـ header ──
-                // نحفظ targetSampleRate (وليس originalSampleRate) لأن هذا ما استخدمناه فعلاً
                 using var fs = new FileStream(outputCustomBinPath, FileMode.Create);
                 using var bw = new BinaryWriter(fs);
 
-                bw.Write(targetSampleRate);       // int: 4 bytes ← SR المستخدم فعلاً
-                bw.Write(channels);               // int: 4 bytes
-                bw.Write(quantizationBits);       // int: 4 bytes
-                bw.Write(stepSize);               // int: 4 bytes
-                bw.Write(compressedData.Length);  // int: 4 bytes
-                bw.Write(compressedData);         // البيانات المضغوطة
+                bw.Write(targetSampleRate);      
+                bw.Write(channels);               
+                bw.Write(quantizationBits);       
+                bw.Write(stepSize);               
+                bw.Write(compressedData.Length);  
+                bw.Write(compressedData);         
             }
             catch (OperationCanceledException)
             {
@@ -107,11 +88,6 @@ namespace AudioCompressor.logic
                 throw;
             }
         }
-
-        // =====================================================================
-        //  DECOMPRESS
-        //  يقرأ جميع الإعدادات من الـ header — لا يحتاج أي input من الواجهة
-        // =====================================================================
         public void DecompressAudio(
             string compressedBinPath,
             string outputWavPath,
@@ -123,15 +99,13 @@ namespace AudioCompressor.logic
             using var fs = new FileStream(compressedBinPath, FileMode.Open);
             using var br = new BinaryReader(fs);
 
-            // قراءة الـ header
-            int sampleRate       = br.ReadInt32();  // الـ SR المستخدم عند الضغط
+            int sampleRate       = br.ReadInt32();  
             int channels         = br.ReadInt32();
             int quantizationBits = br.ReadInt32();
             int stepSize         = br.ReadInt32();
             int dataLength       = br.ReadInt32();
             byte[] compressedData = br.ReadBytes(dataLength);
 
-            // فك الضغط بنفس الإعدادات المحفوظة
             short[] decompressedPcm;
             switch (algorithm.ToUpper())
             {
@@ -157,12 +131,6 @@ namespace AudioCompressor.logic
             writer.Write(finalWavBytes, 0, finalWavBytes.Length);
         }
 
-        // =====================================================================
-        //  الخوارزمية الأولى: DPCM
-        //  يخزن الفرق بين عينتين متتاليتين — 16-bit → 8-bit
-        //  نسبة الضغط الإضافية من Sample Rate:
-        //    مثلاً 48000→22050: عدد العينات ينقص بنسبة ~54% → الملف المضغوط أصغر بنفس النسبة
-        // =====================================================================
         private byte[] ExecuteDPCM(short[] data, CancellationToken token)
         {
             if (data.Length == 0) return Array.Empty<byte>();
@@ -198,11 +166,6 @@ namespace AudioCompressor.logic
             return decoded;
         }
 
-        // =====================================================================
-        //  الخوارزمية الثانية: Delta Modulation
-        //  بت واحد لكل عينة — 8 عينات في byte
-        //  stepSize: حجم الخطوة (1000-2000 مثالي لـ 16-bit)
-        // =====================================================================
         private byte[] ExecuteDeltaModulation(short[] data, int stepSize, CancellationToken token)
         {
             if (data.Length == 0) return Array.Empty<byte>();
@@ -257,15 +220,6 @@ namespace AudioCompressor.logic
             return decoded;
         }
 
-        // =====================================================================
-        //  الخوارزمية الثالثة: Nonlinear Quantization (A-Law)
-        //  ضغط لوغاريتمي — A=87.6 (معيار ITU-T G.711)
-        //  quantizationBits: عدد مستويات التكميم (2^bits)
-        // =====================================================================
-       // =====================================================================
-        //  الخوارزمية الثالثة: Nonlinear Quantization (A-Law) المُعدّلة الشاملة
-        //  تدعم الحشر الديناميكي لأي عدد من البتات (من 2 إلى 16 بت)
-        // =====================================================================
         private byte[] ExecuteNonlinearQuantization(short[] data, int bits, CancellationToken token)
         {
             if (data.Length == 0) return Array.Empty<byte>();
@@ -273,9 +227,8 @@ namespace AudioCompressor.logic
             double A = 87.6;
             int levels = (int)Math.Pow(2, Math.Clamp(bits, 2, 16));
 
-            // حساب الحجم الكلي بالبتات، ثم تحويله لبايتات
             int totalBits = data.Length * bits;
-            int byteCount = (totalBits + 7) / 8; // إضافة 7 للتقريب للأعلى
+            int byteCount = (totalBits + 7) / 8;
             byte[] encoded = new byte[byteCount];
 
             int currentBitIndex = 0;
@@ -284,7 +237,6 @@ namespace AudioCompressor.logic
             {
                 if (i % 5000 == 0) token.ThrowIfCancellationRequested();
 
-                // 1. حساب قيمة الـ A-Law
                 double x = data[i] / (double)short.MaxValue;
                 double absX = Math.Abs(x);
                 double y;
@@ -299,17 +251,14 @@ namespace AudioCompressor.logic
                 int quantized = (int)(((y + 1.0) / 2.0) * (levels - 1));
                 quantized = Math.Clamp(quantized, 0, levels - 1);
 
-                // 2. حشر البتات (Bit-Packing) بشكل ديناميكي
                 for (int b = 0; b < bits; b++)
                 {
-                    // استخراج البت من اليسار لليمين
                     int bitVal = (quantized >> (bits - 1 - b)) & 1; 
                     
                     if (bitVal == 1)
                     {
                         int byteIdx = currentBitIndex / 8;
                         int bitIdx = currentBitIndex % 8;
-                        // وضع البت في مكانه الصحيح داخل المصفوفة
                         encoded[byteIdx] |= (byte)(1 << (7 - bitIdx)); 
                     }
                     currentBitIndex++;
@@ -326,7 +275,6 @@ namespace AudioCompressor.logic
             double A = 87.6;
             int levels = (int)Math.Pow(2, bits);
 
-            // استنتاج عدد العينات الأصلي من حجم البايتات والبتات
             int totalBits = data.Length * 8;
             int sampleCount = totalBits / bits;
             
@@ -337,7 +285,6 @@ namespace AudioCompressor.logic
             {
                 int quantized = 0;
 
-                // 1. قراءة البتات المحشورة لبناء القيمة
                 for (int b = 0; b < bits; b++)
                 {
                     int byteIdx = currentBitIndex / 8;
@@ -351,7 +298,6 @@ namespace AudioCompressor.logic
                     currentBitIndex++;
                 }
 
-                // 2. فك التكميم (Inverse A-Law)
                 double y = ((quantized / (double)(levels - 1)) * 2.0) - 1.0;
                 double absY = Math.Abs(y);
                 double x;

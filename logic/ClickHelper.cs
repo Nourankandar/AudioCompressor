@@ -11,18 +11,14 @@ namespace AudioCompressor.logic
         private readonly AudioManager audioManager;
         private readonly CompressionEngine compressionEngine = new CompressionEngine();
 
-        // مسارات الملفات المؤقتة
         public string tempBinPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "temp_compressed.bin");
         public string tempWavPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "temp_decompressed.wav");
 
-        // الخوارزمية النشطة والإعدادات المحفوظة
         private string activeAlgorithm;
         private int activeQuantizationBits;
 
-        // متغير الحفظ الذكي: ما هي آخر عملية (compress / decompress / none)
         public string lastAction = "none";
 
-        // متغير الإلغاء
         private CancellationTokenSource cancellationTokenSource;
 
         public ClickHelper(AudioManager audioManager)
@@ -47,15 +43,6 @@ namespace AudioCompressor.logic
         {
             audioManager.TogglePlay();
         }
-
-        // public void BtnReset_Click(object sender, EventArgs e)
-        // {
-        //     audioManager.ResetAudio();
-        //     lastAction = "none";
-        //     if (File.Exists(tempBinPath)) File.Delete(tempBinPath);
-        //     if (File.Exists(tempWavPath)) File.Delete(tempWavPath);
-        // }
-
         public void MainForm_DragDrop(object sender, DragEventArgs e)
         {
             string[] files = (string[])e.Data.GetData(DataFormats.FileDrop);
@@ -78,9 +65,6 @@ namespace AudioCompressor.logic
                 cancellationTokenSource.Cancel();
         }
 
-        // ===================================================
-        //  زر الـ Compress المطور لإصلاح نقص البارامترات
-        // ===================================================
         public async Task BtnCompress_Click(ComboBox cbAlgo, NumericUpDown numSampleRate, NumericUpDown numQuant, NumericUpDown numStep, ProgressBar pb, Button btnCancel)
         {
             if (!audioManager.IsFileLoaded)
