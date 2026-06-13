@@ -262,17 +262,30 @@ namespace AudioCompressor.logic
         //  ضغط لوغاريتمي — A=87.6 (معيار ITU-T G.711)
         //  quantizationBits: عدد مستويات التكميم (2^bits)
         // =====================================================================
+       // =====================================================================
+        //  الخوارزمية الثالثة: Nonlinear Quantization (A-Law) المُعدّلة الشاملة
+        //  تدعم الحشر الديناميكي لأي عدد من البتات (من 2 إلى 16 بت)
+        // =====================================================================
         private byte[] ExecuteNonlinearQuantization(short[] data, int bits, CancellationToken token)
         {
-            byte[] encoded = new byte[data.Length];
-            double A      = 87.6;
-            int    levels = (int)Math.Pow(2, Math.Clamp(bits, 2, 16));
+            if (data.Length == 0) return Array.Empty<byte>();
+
+            double A = 87.6;
+            int levels = (int)Math.Pow(2, Math.Clamp(bits, 2, 16));
+
+            // حساب الحجم الكلي بالبتات، ثم تحويله لبايتات
+            int totalBits = data.Length * bits;
+            int byteCount = (totalBits + 7) / 8; // إضافة 7 للتقريب للأعلى
+            byte[] encoded = new byte[byteCount];
+
+            int currentBitIndex = 0;
 
             for (int i = 0; i < data.Length; i++)
             {
                 if (i % 5000 == 0) token.ThrowIfCancellationRequested();
 
-                double x    = data[i] / (double)short.MaxValue;
+                // 1. حساب قيمة الـ A-Law
+                double x = data[i] / (double)short.MaxValue;
                 double absX = Math.Abs(x);
                 double y;
 
@@ -286,22 +299,61 @@ namespace AudioCompressor.logic
                 int quantized = (int)(((y + 1.0) / 2.0) * (levels - 1));
                 quantized = Math.Clamp(quantized, 0, levels - 1);
 
-                encoded[i] = (byte)((quantized * 255) / (levels - 1));
+                // 2. حشر البتات (Bit-Packing) بشكل ديناميكي
+                for (int b = 0; b < bits; b++)
+                {
+                    // استخراج البت من اليسار لليمين
+                    int bitVal = (quantized >> (bits - 1 - b)) & 1; 
+                    
+                    if (bitVal == 1)
+                    {
+                        int byteIdx = currentBitIndex / 8;
+                        int bitIdx = currentBitIndex % 8;
+                        // وضع البت في مكانه الصحيح داخل المصفوفة
+                        encoded[byteIdx] |= (byte)(1 << (7 - bitIdx)); 
+                    }
+                    currentBitIndex++;
+                }
             }
             return encoded;
         }
 
         private short[] DecompressNonlinearQuantization(byte[] data, int bits)
         {
-            short[] decoded = new short[data.Length];
-            double  A       = 87.6;
-            int     levels  = (int)Math.Pow(2, Math.Clamp(bits, 2, 16));
+            if (data.Length == 0) return Array.Empty<short>();
 
-            for (int i = 0; i < data.Length; i++)
+            bits = Math.Clamp(bits, 2, 16);
+            double A = 87.6;
+            int levels = (int)Math.Pow(2, bits);
+
+            // استنتاج عدد العينات الأصلي من حجم البايتات والبتات
+            int totalBits = data.Length * 8;
+            int sampleCount = totalBits / bits;
+            
+            short[] decoded = new short[sampleCount];
+            int currentBitIndex = 0;
+
+            for (int i = 0; i < sampleCount; i++)
             {
-                int    quantized = (data[i] * (levels - 1)) / 255;
-                double y         = ((quantized / (double)(levels - 1)) * 2.0) - 1.0;
-                double absY      = Math.Abs(y);
+                int quantized = 0;
+
+                // 1. قراءة البتات المحشورة لبناء القيمة
+                for (int b = 0; b < bits; b++)
+                {
+                    int byteIdx = currentBitIndex / 8;
+                    int bitIdx = currentBitIndex % 8;
+
+                    if (byteIdx < data.Length)
+                    {
+                        int bitVal = (data[byteIdx] >> (7 - bitIdx)) & 1;
+                        quantized = (quantized << 1) | bitVal;
+                    }
+                    currentBitIndex++;
+                }
+
+                // 2. فك التكميم (Inverse A-Law)
+                double y = ((quantized / (double)(levels - 1)) * 2.0) - 1.0;
+                double absY = Math.Abs(y);
                 double x;
 
                 if (absY < (1.0 / (1.0 + Math.Log(A))))
@@ -315,7 +367,6 @@ namespace AudioCompressor.logic
             }
             return decoded;
         }
-
         private static float[] ReadAllFloatSamples(ISampleProvider provider, CancellationToken token)
         {
             var samples = new List<float>();

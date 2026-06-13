@@ -98,7 +98,17 @@ namespace AudioCompressor.interfaces
 
             btnBrowse.Click += clickHelper.BtnBrowse_Click;
             btnPlay.Click += clickHelper.BtnPlay_Click;
-            btnReset.Click += clickHelper.BtnReset_Click;
+            btnReset.Click += async (s, e) =>
+            {
+            
+                audioManager.ResetAudio();
+                clickHelper.lastAction = "none";
+                if (File.Exists(clickHelper.tempBinPath)) File.Delete(clickHelper.tempBinPath);
+                if (File.Exists(clickHelper.tempWavPath)) File.Delete(clickHelper.tempWavPath);
+                progressBar.Value = 0;
+                progressBar.Refresh();
+            
+            };
             btnSave.Click += clickHelper.BtnSave_Click;
             btnReport.Click += BtnReport_Click;
 

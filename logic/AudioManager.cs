@@ -231,6 +231,8 @@ namespace AudioCompressor.logic
             lblBitrate.Text = "Bitrate: --";
             lblEncoding.Text = "Encoding: --";
             pnlWaveform.Invalidate();
+            // progressBar.Refresh();
+            
         }
 
         // منطق حركة الأمواج

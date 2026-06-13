@@ -3,7 +3,7 @@ using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
-
+using AudioCompressor.interfaces;
 namespace AudioCompressor.logic
 {
     public class ClickHelper
@@ -12,15 +12,15 @@ namespace AudioCompressor.logic
         private readonly CompressionEngine compressionEngine = new CompressionEngine();
 
         // مسارات الملفات المؤقتة
-        private string tempBinPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "temp_compressed.bin");
-        private string tempWavPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "temp_decompressed.wav");
+        public string tempBinPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "temp_compressed.bin");
+        public string tempWavPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "temp_decompressed.wav");
 
         // الخوارزمية النشطة والإعدادات المحفوظة
         private string activeAlgorithm;
         private int activeQuantizationBits;
 
         // متغير الحفظ الذكي: ما هي آخر عملية (compress / decompress / none)
-        private string lastAction = "none";
+        public string lastAction = "none";
 
         // متغير الإلغاء
         private CancellationTokenSource cancellationTokenSource;
@@ -48,13 +48,13 @@ namespace AudioCompressor.logic
             audioManager.TogglePlay();
         }
 
-        public void BtnReset_Click(object sender, EventArgs e)
-        {
-            audioManager.ResetAudio();
-            lastAction = "none";
-            if (File.Exists(tempBinPath)) File.Delete(tempBinPath);
-            if (File.Exists(tempWavPath)) File.Delete(tempWavPath);
-        }
+        // public void BtnReset_Click(object sender, EventArgs e)
+        // {
+        //     audioManager.ResetAudio();
+        //     lastAction = "none";
+        //     if (File.Exists(tempBinPath)) File.Delete(tempBinPath);
+        //     if (File.Exists(tempWavPath)) File.Delete(tempWavPath);
+        // }
 
         public void MainForm_DragDrop(object sender, DragEventArgs e)
         {
